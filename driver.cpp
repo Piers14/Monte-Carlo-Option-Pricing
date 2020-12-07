@@ -6,11 +6,11 @@
 #include "PayoffBridge.hpp"
 #include "VanillaOption.h"
 #include "Parameters.hpp"
-
+#include "MCStatistics.hpp"
 
 double TestPayoff(const PayoffBridge& thePayoff, double spot);
-double SimpleMC(VanillaOption& theOption, const Parameters& vol, const Parameters& r, double spot,
-                int numOfPaths, NormalGenerator& rNorm);
+void SimpleMC(VanillaOption& theOption, const Parameters& vol, const Parameters& r, double spot,
+                int numOfPaths, NormalGenerator& rNorm, MCStatistics& gatherer);
 
 int main(int argc, char* argv[]){
     NormalGenerator randomNormal;
@@ -20,9 +20,11 @@ int main(int argc, char* argv[]){
     PayoffCall testCallPayoff(30);
     VanillaOption testOption(testCallPayoff, 3);
 
-    double optionValue = SimpleMC(testOption, vol, r, spot, 10000000, randomNormal);
+    StatisticsMean meanGatherer;
 
-    std::cout << optionValue << std::endl;
+    SimpleMC(testOption, vol, r, spot, 1000000, randomNormal, meanGatherer);
+
+    std::cout << meanGatherer.GetResultsSoFar()[0][0] << std::endl;
 
     return 0;
 }
@@ -32,8 +34,8 @@ double TestPayoff(const PayoffBridge& thePayoff, double spot)
     return thePayoff(spot);
 }
 
-double SimpleMC(VanillaOption& theOption, const Parameters& vol, const Parameters& r, double spot,
-                int numOfPaths, NormalGenerator& rNorm)
+void SimpleMC(VanillaOption& theOption, const Parameters& vol, const Parameters& r, double spot,
+                int numOfPaths, NormalGenerator& rNorm, MCStatistics& gatherer)
 {
     double expiry = theOption.GetExpiry();
     double variance = vol.SquareIntegral(0, expiry);
@@ -41,14 +43,12 @@ double SimpleMC(VanillaOption& theOption, const Parameters& vol, const Parameter
 
     double movedSpot = spot * exp(r.Integral(0, expiry) - 0.5 * variance);
     double newSpot;
-    double runningSum = 0;
     for(int i = 0; i < numOfPaths; i ++)
     {
         newSpot = movedSpot * exp(rootVariance * rNorm.rng());
-        runningSum += theOption.ComputePayoff(newSpot);
+        gatherer.DumpOneResult(theOption.ComputePayoff(newSpot) * exp(-r.Integral(0, expiry)));
     }
-    double mean = runningSum / numOfPaths;
-    return exp(-r.Integral(0, expiry)) * mean;
+    return;
 }
 
 

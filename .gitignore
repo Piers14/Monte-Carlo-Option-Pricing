@@ -1,2 +1,5 @@
 
 MCOP_git/MCOP_git.cbp
+*.o
+*.depend
+*.exe
