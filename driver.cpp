@@ -7,6 +7,7 @@
 #include "VanillaOption.h"
 #include "Parameters.hpp"
 
+
 double TestPayoff(const PayoffBridge& thePayoff, double spot);
 double SimpleMC(VanillaOption& theOption, const Parameters& vol, const Parameters& r, double spot,
                 int numOfPaths, NormalGenerator& rNorm);
